@@ -303,15 +303,16 @@ def coord_type(ordinate: str) -> int:
     try:
         ord_match = re.search(
             r"^([+-]?)((\d+(\.\d*)?)|(\d{1,3})_(\d{1,2}(\.\d*)?))([NSEW]?)$",
+            r"^([+-]?)((\d+(\.\d*)?)|((\d{1,3})_(\d{1,2}(\.\d*)?)))([NSEW]?)$",
             ordinate,
         )
         if not ord_match:
             raise ValueError()
         sign = ord_match.group(1)
         dec_deg = ord_match.group(3)
-        deg = ord_match.group(5)
-        min = ord_match.group(6)
-        hemisphere = ord_match.group(8)
+        deg = ord_match.group(6)
+        min = ord_match.group(7)
+        hemisphere = ord_match.group(9)
         if sign and hemisphere:
             raise ValueError("Ordinate should use either [+-] or [NSEW], not both.")
 
