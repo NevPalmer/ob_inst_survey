@@ -79,6 +79,7 @@ def main():
 
     try:
         count_no_time = 0
+        create_file = True
         while True:
             sleep(0.001)  # Prevents idle loop from 100% CPU thread usage.
             sentence = get_next_sentence(nmea_q)
@@ -110,11 +111,15 @@ def main():
                         outfilepath, sentence, "NMEA Timestamp is invalid!"
                     )
                     continue
-                curr_file_split = int(nmea_time.timestamp() / (file_split_hours * 3600))
-                if curr_file_split > last_file_split:
+                if file_split_hours:
+                    curr_file_split = int(nmea_time.timestamp() / (file_split_hours * 3600))
+                    if curr_file_split > last_file_split:
+                        create_file = True
+                        last_file_split = curr_file_split
+                if create_file == True:
                     file_timestamp = nmea_time.strftime("%Y-%m-%d_%H-%M")
                     outfilename = outfilepath / f"{outfileprefix}_{file_timestamp}.txt"
-                    last_file_split = curr_file_split
+                    create_file = False
 
             with open(outfilename, "a+", newline="", encoding="utf-8") as nmea_file:
                 nmea_file.write(f"{sentence}\n")
