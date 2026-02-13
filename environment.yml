@@ -1,0 +1,8 @@
+name: ob_surv
+dependencies:
+  - python >=3.9
+  - matplotlib >=3.3
+  - numpy >=1.22
+  - pandas
+  - pyserial >=3.5
+  - pyproj
