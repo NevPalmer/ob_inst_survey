@@ -42,6 +42,11 @@ def main():
         action="store_true",
         help=("Ignore the NMEA checksum and use all sentences."),
     )
+    parser.add_argument(
+        "--logtimestamp",
+        action="store_true",
+        help=("Log an additional timestamp at the beginning of each NMEA sentence."),
+    )
 
     args = parser.parse_args()
     outfilepath: Path = args.outfilepath
@@ -58,6 +63,7 @@ def main():
     replay_start: datetime = args.replaystart
     replay_speed: float = args.replayspeed
     ignorechksum: bool = args.ignorechksum
+    logtimestamp: bool = args.logtimestamp
 
     # Create directory for logging.
     outfilepath.mkdir(parents=True, exist_ok=True)
@@ -96,12 +102,13 @@ def main():
 
             nmea_time = time_from_nmea(sentence)
             if not nmea_time:
+                nmea_time = datetime.now(timezone.utc)
                 if last_file_split == 0:
                     count_no_time += 1
                     if count_no_time > 5:
                         # Use system time to name file if NMEA has no time
                         # stamp after 6 sentences.
-                        nmea_time = datetime.now(timezone.utc)
+                        file_time = nmea_time
                     else:
                         continue
 
@@ -111,6 +118,8 @@ def main():
                         outfilepath, sentence, "NMEA Timestamp is invalid!"
                     )
                     continue
+
+            if file_time:
                 if file_split_hours:
                     curr_file_split = int(nmea_time.timestamp() / (file_split_hours * 3600))
                     if curr_file_split > last_file_split:
@@ -122,7 +131,15 @@ def main():
                     create_file = False
 
             with open(outfilename, "a+", newline="", encoding="utf-8") as nmea_file:
-                nmea_file.write(f"{sentence}\n")
+                if logtimestamp:
+                    print(nmea_time)
+                    if nmea_time and nmea_time != "invalid_time":
+                        time_str = nmea_time.strftime("%Y-%m-%d_%H:%M:%S.%f")[:-3]
+                    else:
+                        time_str = "0000-00-00_00:00:00.000, "
+                    nmea_file.write(f"{time_str}, {sentence}\n")
+                else:
+                    nmea_file.write(f"{sentence}\n")
                 print(sentence)
 
     except KeyboardInterrupt:
