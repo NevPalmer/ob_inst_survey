@@ -132,15 +132,15 @@ def main():
 
             with open(outfilename, "a+", newline="", encoding="utf-8") as nmea_file:
                 if logtimestamp:
-                    print(nmea_time)
                     if nmea_time and nmea_time != "invalid_time":
                         time_str = nmea_time.strftime("%Y-%m-%d_%H:%M:%S.%f")[:-3]
                     else:
                         time_str = "0000-00-00_00:00:00.000, "
                     nmea_file.write(f"{time_str}, {sentence}\n")
+                    print(f"{time_str}, {sentence}")
                 else:
                     nmea_file.write(f"{sentence}\n")
-                print(sentence)
+                    print(sentence)
 
     except KeyboardInterrupt:
         sys.exit("*** End NMEA Logging ***")
