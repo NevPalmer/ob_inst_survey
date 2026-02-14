@@ -144,8 +144,11 @@ def _receive_tcp(tcp_conn: IpParam, nmea_q: Queue[str]):
 
 
 def _msg_to_sentences(message: str) -> list[str]:
-    message = message.decode("utf-8")
     nmea_sentences = []
+    try:
+        message = message.decode("utf-8")
+    except UnicodeDecodeError:
+        return nmea_sentences
     for sentence in message.splitlines():
         nmea_sentences.append(sentence.strip())
 
