@@ -86,7 +86,9 @@ def main():
     try:
         count_no_time = 0
         create_file = True
+        outfilename = ""
         while True:
+            file_time = False
             sleep(0.001)  # Prevents idle loop from 100% CPU thread usage.
             sentence = get_next_sentence(nmea_q)
             if not sentence:
@@ -102,13 +104,13 @@ def main():
 
             nmea_time = time_from_nmea(sentence)
             if not nmea_time:
-                nmea_time = datetime.now(timezone.utc)
                 if last_file_split == 0:
                     count_no_time += 1
                     if count_no_time > 5:
                         # Use system time to name file if NMEA has no time
                         # stamp after 6 sentences.
-                        file_time = nmea_time
+                        nmea_time = datetime.now(timezone.utc)
+                        file_time = True
                     else:
                         continue
 
@@ -130,17 +132,18 @@ def main():
                     outfilename = outfilepath / f"{outfileprefix}_{file_timestamp}.txt"
                     create_file = False
 
-            with open(outfilename, "a+", newline="", encoding="utf-8") as nmea_file:
-                if logtimestamp:
-                    if nmea_time and nmea_time != "invalid_time":
-                        time_str = nmea_time.strftime("%Y-%m-%d_%H:%M:%S.%f")[:-3]
+            if outfilename:
+                with open(outfilename, "a+", newline="", encoding="utf-8") as nmea_file:
+                    if logtimestamp:
+                        if nmea_time and nmea_time != "invalid_time":
+                            time_str = nmea_time.strftime("%Y-%m-%d_%H:%M:%S.%f")[:-3]
+                        else:
+                            time_str = "0000-00-00_00:00:00.000, "
+                        nmea_file.write(f"{time_str}, {sentence}\n")
+                        print(f"{time_str}, {sentence}")
                     else:
-                        time_str = "0000-00-00_00:00:00.000, "
-                    nmea_file.write(f"{time_str}, {sentence}\n")
-                    print(f"{time_str}, {sentence}")
-                else:
-                    nmea_file.write(f"{sentence}\n")
-                    print(sentence)
+                        nmea_file.write(f"{sentence}\n")
+                        print(sentence)
 
     except KeyboardInterrupt:
         sys.exit("*** End NMEA Logging ***")
