@@ -104,6 +104,7 @@ def main():
 
             nmea_time = time_from_nmea(sentence)
             if not nmea_time:
+                nmea_time = datetime.now(timezone.utc)
                 if last_file_split == 0:
                     count_no_time += 1
                     if count_no_time > 5:
@@ -138,7 +139,7 @@ def main():
                         if nmea_time and nmea_time != "invalid_time":
                             time_str = nmea_time.strftime("%Y-%m-%d_%H:%M:%S.%f")[:-3]
                         else:
-                            time_str = "0000-00-00_00:00:00.000, "
+                            time_str = "0000-00-00_00:00:00.000"
                         nmea_file.write(f"{time_str}, {sentence}\n")
                         print(f"{time_str}, {sentence}")
                     else:
