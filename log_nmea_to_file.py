@@ -72,7 +72,7 @@ def main():
     nmea_q: Queue[str] = Queue()
     if replay_file:
         obsurv.nmea_replay_textfile(
-            filename=replay_file,
+            filename=str(replay_file),
             nmea_q=nmea_q,
             spd_fctr=replay_speed,
             timestamp_start=replay_start,
@@ -84,11 +84,13 @@ def main():
         )
 
     try:
+        prev_time = None
+        nmea_time = None
+        use_sys_time = False
         count_no_time = 0
         create_file = True
         outfilename = ""
         while True:
-            file_time = False
             sleep(0.001)  # Prevents idle loop from 100% CPU thread usage.
             sentence = get_next_sentence(nmea_q)
             if not sentence:
@@ -102,18 +104,25 @@ def main():
                 )
                 continue
 
-            nmea_time = time_from_nmea(sentence)
-            if not nmea_time:
+            if not use_sys_time:
+                prev_time = nmea_time
+                nmea_time = time_from_nmea(sentence)
+            else:
                 nmea_time = datetime.now(timezone.utc)
+
+            if not nmea_time:
                 if last_file_split == 0:
                     count_no_time += 1
                     if count_no_time > 5:
-                        # Use system time to name file if NMEA has no time
+                        # Use system time if NMEA has no time
                         # stamp after 6 sentences.
                         nmea_time = datetime.now(timezone.utc)
-                        file_time = True
+                        use_sys_time = True
                     else:
                         continue
+                if not use_sys_time:
+                    nmea_time = prev_time
+
 
             if nmea_time:
                 if nmea_time == "invalid_time":
@@ -121,14 +130,12 @@ def main():
                         outfilepath, sentence, "NMEA Timestamp is invalid!"
                     )
                     continue
-
-            if file_time:
                 if file_split_hours:
                     curr_file_split = int(nmea_time.timestamp() / (file_split_hours * 3600))
                     if curr_file_split > last_file_split:
                         create_file = True
                         last_file_split = curr_file_split
-                if create_file == True:
+                if create_file:
                     file_timestamp = nmea_time.strftime("%Y-%m-%d_%H-%M")
                     outfilename = outfilepath / f"{outfileprefix}_{file_timestamp}.txt"
                     create_file = False
@@ -161,7 +168,7 @@ def log_invalid_nmea_str(outfilepath, nmea_sentence, message):
         print(f"{message} Sentence has been ignored:\n{nmea_sentence}")
 
 
-def get_next_sentence(nmea_q: Queue) -> str:
+def get_next_sentence(nmea_q: Queue) -> str|None:
     """Return next sentence from NMEA queue."""
     if nmea_q.empty():
         return None
@@ -171,7 +178,7 @@ def get_next_sentence(nmea_q: Queue) -> str:
     return nmea_str
 
 
-def time_from_nmea(sentence: str) -> datetime:
+def time_from_nmea(sentence: str) -> datetime|None:
     """Return the time from an NMEA sentence."""
     try:
         nmea_hr = int(sentence[7:9])
@@ -179,7 +186,7 @@ def time_from_nmea(sentence: str) -> datetime:
         nmea_sec = int(sentence[11:13])
     except ValueError:
         # This NMEA sentence does not contain a time field.
-        return 0
+        return None
     sys_time = datetime.now(timezone.utc)
     sys_yr = sys_time.year
     sys_mth = sys_time.month

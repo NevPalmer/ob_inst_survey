@@ -23,8 +23,8 @@ def obsfile_parser():
 
 
 def replay2files_parser(
-    dflt_nmeareplayfile: Path = DFLT_INFILE,
-    dflt_rngreplayfile: Path = DFLT_INFILE,
+    dflt_nmeareplayfile: Path|None = DFLT_INFILE,
+    dflt_rngreplayfile: Path|None = DFLT_INFILE,
 ):
     """Returns parser for full path and filename for input files."""
     parser = ArgumentParser(add_help=False)
@@ -84,7 +84,7 @@ def replay2files_parser(
     return parser
 
 
-def replayfile_parser(dflt_replayfile: Path = DFLT_INFILE):
+def replayfile_parser(dflt_replayfile: Path|None = DFLT_INFILE):
     """Returns parser for full path and filename for input file."""
     parser = ArgumentParser(add_help=False)
     infile_group = parser.add_argument_group(title="Input File Parameters:")
@@ -298,7 +298,7 @@ def timestamp_type(timestamp: str) -> datetime:
         raise ArgumentTypeError(msg) from exc
 
 
-def coord_type(ordinate: str) -> int:
+def coord_type(ordinate: str) -> float:
     """Argparse type for Lat/Lon as [+-]ddd.dddd[NSEW] or ddd_mm.mmm[NSEW]."""
     try:
         ord_match = re.search(
